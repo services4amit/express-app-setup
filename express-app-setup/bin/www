@@ -6,8 +6,11 @@
 
 var app = require("../app");
 var debug = require("debug")("express-app-setup:server");
-var http = require("http");
+var https = require("https");
+const fs = require('fs');
 
+const privateKey = fs.readFileSync('server.key');
+const certificate = fs.readFileSync('server.cert')
 //Uncaught exception happens with sync requests so we have to keept it on top of code execution
 process.on("uncaughtException", (err) => {
   console.log("Inside uncaughtException");
@@ -26,7 +29,7 @@ app.set("port", port);
  * Create HTTP server.
  */
 
-var server = http.createServer(app);
+var server = https.createServer({ key: privateKey, cert: certificate },app);
 
 //UnhandledRejections come from ASYNC requests which are not handled
 // We need to do handle in below way

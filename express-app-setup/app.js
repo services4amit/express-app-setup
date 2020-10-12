@@ -4,7 +4,10 @@ var compression = require("compression");
 const helmet = require("helmet");
 var path = require("path");
 var cookieParser = require("cookie-parser");
+var csrf = require('csurf');
 var logger = require("morgan");
+var mongoose = require("mongoose");
+const rateLimit = require("express-rate-limit");
 
 var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/users");
@@ -12,18 +15,26 @@ const AppError = require("./appError");
 const errorHandler = require("./errorHandler");
 const mw = require("./my-middleware");
 
-process.env.NODE_ENV = process.env.environment || "PROD";
+var csrfProtection = csrf({ cookie: true });
+
+const apiLimiter = rateLimit({
+  windowMs: 2 * 60 * 1000, // 2 minutes
+  max: 5,
+});
+
+
+process.env.NODE_ENV = process.env.environment || "DEV";
 
 // Mongo connection started
 var mongoconnect = () => {
-  if (envVar != "local") {
+  if (process.env.NODE_ENV === "PROD") {
     var options = {
       user:
         process.env.MONGODB_USER ||
-        configFile[envVar].dev.marmaduke_conn_details.user_name,
+        configFile[process.env.NODE_ENV].dev.marmaduke_conn_details.user_name,
       pass:
         utilities.decodeSpecialChars(process.env.MONGODB_PWD) ||
-        configFile[envVar].dev.marmaduke_conn_details.password,
+        configFile[process.env.NODE_ENV].dev.marmaduke_conn_details.password,
       authMechanism: "PLAIN",
       sslValidate: false,
       ssl: true,
@@ -35,7 +46,7 @@ var mongoconnect = () => {
 
     var uri =
       process.env.MONGODB_URL ||
-      configFile[envVar].marmaduke_conn_details.mongo_db_url;
+      configFile[process.env.NODE_ENV].marmaduke_conn_details.mongo_db_url;
 
     mongoose.connect(uri, options, (err, client) => {
       logger.info("mongodb url: " + uri);
@@ -51,13 +62,15 @@ var mongoconnect = () => {
       reconnectInterval: 1000,
     };
     mongoose.connect(
-      configFile[envVar].marmaduke_conn_details.mongo_db_url,
+      "mongodb://localhost:27017/test",
       options,
       (err, client) => {
         if (err) {
-          return logger.error(err, 400, fileOwner);
+          return console.log("line 60");
+          // logger.error(err, 400, fileOwner);
         }
-        logger.info("connected to MongoDB", fileOwner);
+        console.log("line 63");
+        // logger.info("connected to MongoDB", fileOwner);
       }
     );
   }
@@ -66,16 +79,19 @@ var mongoconnect = () => {
 mongoconnect();
 
 mongoose.connection.on("connected", () => {
-  logger.info("MongoDB connected", fileOwner);
+  console.log("mongo connected");
+  // logger.info("MongoDB connected", fileOwner);
 });
 
 mongoose.connection.on("disconnected", () => {
   mongoconnect();
-  logger.info("MongoDB connection lost", fileOwner);
+  console.log("connection lost");
+  // logger.info("MongoDB connection lost", fileOwner);
 });
 
 mongoose.connection.on("reconnect", () => {
-  logger.info("MongoDB reconnected", fileOwner);
+  console.log("reconnected");
+  // logger.info("MongoDB reconnected", fileOwner);
 });
 
 // Mongo connection ended
@@ -179,6 +195,8 @@ app.use(
 );
 
 // Routes
+app.use("/api/", csrfProtection)
+app.use("/api/", apiLimiter);
 app.use("/api", usersRouter);
 
 app.use("/api", logoutRequest);
