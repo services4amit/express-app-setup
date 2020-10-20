@@ -1,6 +1,7 @@
 var express = require("express");
 var router = express.Router();
 const service = require("../services/service");
+const { userValidationRules, validate } = require('../services/validator.js')
 
 /* GET users listing. */
 router.get("/", function (req, res, next) {
@@ -13,6 +14,7 @@ router.get('/compression', (req, res) => {
   res.send(animal.repeat(1000));
 });
 
+router.post('/validation', userValidationRules(), validate,service.validation);
 router.route("/syncError").get(service.syncError);
 router.route("/asyncError").get(service.asyncError);
 module.exports = router;

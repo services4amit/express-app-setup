@@ -29,3 +29,8 @@ module.exports.asyncError = catchAsync(async (req, res, next) => {
   let resp = await asyncTest();
   res.status(200).json({ msg: resp });
 });
+
+module.exports.validation = catchAsync(async (req, res, next) => {
+  console.log('body: ',req.body)
+  res.status(200).json({msg: "Validation is Successful"})
+});
