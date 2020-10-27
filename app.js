@@ -195,7 +195,7 @@ app.use(
 );
 
 // Routes
-app.use("/api/", csrfProtection)
+// app.use("/api/", csrfProtection)
 app.use("/api/", apiLimiter);
 app.use("/api", usersRouter);
 

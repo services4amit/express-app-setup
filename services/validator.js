@@ -1,6 +1,8 @@
 const { body, validationResult } = require("express-validator");
+const catchSync = require("../catchSync");
 
 const existingEmail = "pillisreeja@gmail.com"
+
 const userValidationRules = () => {
   return [
     // username must be an email
@@ -30,18 +32,19 @@ const userValidationRules = () => {
   ];
 };
 
-const validate = (req, res, next) => {
+const validate = catchSync((req, res, next) => {
   const errors = validationResult(req);
   if (errors.isEmpty()) {
     return next();
   }
+  
   const extractedErrors = [];
   errors.array().map((err) => extractedErrors.push({ [err.param]: err.msg }));
-
+  // res.send(extractedErrors)
   return res.status(422).json({
     errors: extractedErrors,
   });
-};
+});
 
 module.exports = {
   userValidationRules,
